@@ -1,0 +1,20 @@
+
+Testing of foobar2000 media player control in home-assistant
+This component requires pyfoobar2k
+https://bitbucket.org/ed0zer/pyfoorbar2k
+
+Setup:
+place foobar.py and pyfoobar2k/ into custom_components/media_player/
+follow instrunctions in pyfoobar2k to setup foobar2000
+
+media_player:
+  - platform: foobar
+    host: 192.168.1.100
+
+Additional config parameters:
+media_player:
+  - platform: foobar
+    name: entity name
+    host: 192.168.1.100
+    username: username
+    password: password
