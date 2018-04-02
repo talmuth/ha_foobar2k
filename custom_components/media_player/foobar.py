@@ -8,21 +8,21 @@ import logging
 from datetime import timedelta
 
 import voluptuous as vol
-import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers import script, config_validation as cv
 import homeassistant.util.dt as dt_util
 
 from homeassistant.components.media_player import (
     MEDIA_TYPE_MUSIC, PLATFORM_SCHEMA, SUPPORT_NEXT_TRACK, SUPPORT_PAUSE,
     SUPPORT_PREVIOUS_TRACK, SUPPORT_VOLUME_MUTE, SUPPORT_VOLUME_SET,
     SUPPORT_PLAY, SUPPORT_STOP, SUPPORT_VOLUME_STEP, SUPPORT_SEEK,
-    SUPPORT_SELECT_SOURCE, MediaPlayerDevice)
+    SUPPORT_SELECT_SOURCE, SUPPORT_TURN_ON, SUPPORT_TURN_OFF, MediaPlayerDevice)
 
 from homeassistant.const import (
     CONF_NAME, CONF_HOST, CONF_PORT, CONF_USERNAME,
     CONF_PASSWORD, STATE_OFF, STATE_PAUSED, STATE_PLAYING,
     CONF_TIMEOUT, STATE_UNKNOWN, STATE_IDLE)
 
-#REQUIREMENTS = ['pyfoobar2k==0.1']
+# REQUIREMENTS = ['pyfoobar2k==0.1']
 
 SCAN_INTERVAL = timedelta(seconds=5)
 _LOGGER = logging.getLogger(__name__)
@@ -30,6 +30,8 @@ _LOGGER = logging.getLogger(__name__)
 DEFAULT_NAME = 'Foobar2000'
 DEFAULT_PORT = '8888'
 DEFAULT_TIMEOUT = 3
+CONF_TURN_ON_ACTION = 'turn_on_action'
+CONF_TURN_OFF_ACTION = 'turn_off_action'
 
 SUPPORT_FOOBAR_PLAYER = \
     SUPPORT_PAUSE | SUPPORT_VOLUME_SET | SUPPORT_VOLUME_MUTE | \
@@ -42,7 +44,9 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_PASSWORD, default=None): cv.string,
     vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
     vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.port,
-    vol.Optional(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): cv.positive_int})
+    vol.Optional(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): cv.positive_int,
+    vol.Optional(CONF_TURN_ON_ACTION, default=None): cv.SCRIPT_SCHEMA,
+    vol.Optional(CONF_TURN_OFF_ACTION, default=None): cv.SCRIPT_SCHEMA})
 
 
 def setup_platform(hass, config, add_devices, discovery_info=None):
@@ -54,18 +58,21 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     username = config.get(CONF_USERNAME)
     password = config.get(CONF_PASSWORD)
     timeout = config.get(CONF_TIMEOUT)
+    turn_on_action = config.get(CONF_TURN_ON_ACTION)
+    turn_off_action = config.get(CONF_TURN_OFF_ACTION)
 
     remote = FoobarRemote(host, port, username, password, timeout)
 
-    add_devices([FoobarDevice(remote, name)])
+    add_devices([FoobarDevice(hass, remote, name, turn_on_action, turn_off_action)])
 
 
 class FoobarDevice(MediaPlayerDevice):
 
-    def __init__(self, remote, name):
+    def __init__(self, hass, remote, name, turn_on_action=None, turn_off_action=None):
 
         self._name = name
         self._remote = remote
+        self.hass = hass
         self._volume = 0.0
         self._track_name = ''
         self._track_artist = ''
@@ -80,6 +87,20 @@ class FoobarDevice(MediaPlayerDevice):
         self._state = STATE_UNKNOWN
         self._base_url = self._remote.url
         self._albumart_path = ''
+        # Script creation for the turn on/off config options
+        if turn_on_action is not None:
+            turn_on_action = script.Script(
+                self.hass, turn_on_action,
+                "{} turn ON script".format(self.name),
+                self.async_update_ha_state(True))
+        if turn_off_action is not None:
+            turn_off_action = script.Script(
+                self.hass, turn_off_action,
+                "{} turn OFF script".format(self.name),
+                self.async_update_ha_state(True))
+
+        self._turn_on_action = turn_on_action
+        self._turn_off_action = turn_off_action
 
     def update(self):
         try:
@@ -157,11 +178,35 @@ class FoobarDevice(MediaPlayerDevice):
     @property
     def supported_features(self):
         """Flag media player features that are supported."""
-        return SUPPORT_FOOBAR_PLAYER
+        supported_features = SUPPORT_FOOBAR_PLAYER
+        if self._turn_on_action is not None:
+            supported_features |= SUPPORT_TURN_ON
+        if self._turn_off_action is not None:
+            supported_features |= SUPPORT_TURN_OFF
+        return supported_features
+
+    def turn_on(self):
+        """Execute turn_on_action to turn on media player."""
+        if self._turn_on_action is not None:
+            self._turn_on_action.run(variables={"entity_id": self.entity_id})
+        else:
+            _LOGGER.warning("turn_on requested but turn_on_action is none")
+
+    def turn_off(self):
+        """Execute turn_off_action to turn on media player."""
+        if self._turn_off_action is not None:
+            self._turn_off_action.run(variables={"entity_id": self.entity_id})
+        else:
+            _LOGGER.warning("turn_off requested but turn_off_action is none")
 
     def media_play_pause(self):
         """Send the media player the command for play/pause."""
         self._remote.cmd('PlayOrPause')
+
+    def media_pause(self):
+        """Send the media player the command for play/pause if playing."""
+        if self._state == STATE_PLAYING:
+            self._remote.cmd('PlayOrPause')
 
     def media_stop(self):
         """Send the media player the stop command."""
