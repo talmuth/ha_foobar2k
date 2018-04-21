@@ -1,9 +1,9 @@
 """ 
 Support for foobar2000 Music Player as media player
 via pyfoobar2k https://bitbucket.org/ed0zer/pyfoorbar2k 
-And foobar2000 component foo_httpcontrol by oblikoamorale https://bitbucket.org/obostlikoamorale/foo_httpcontrol
-
+And foobar2000 component foo_httpcontrol by oblikoamorale https://bitbucket.org/oblikoamorale/foo_httpcontrol
 """
+
 import logging
 from datetime import timedelta
 
@@ -22,7 +22,7 @@ from homeassistant.const import (
     CONF_PASSWORD, STATE_OFF, STATE_PAUSED, STATE_PLAYING,
     CONF_TIMEOUT, STATE_UNKNOWN, STATE_IDLE)
 
-# REQUIREMENTS = ['pyfoobar2k==0.1']
+REQUIREMENTS = ['pyfoobar2k==0.2.2']
 
 SCAN_INTERVAL = timedelta(seconds=5)
 _LOGGER = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 
 def setup_platform(hass, config, add_devices, discovery_info=None):
     """Set up the Foobar Player platform."""
-    from .pyfoobar2k import FoobarRemote
+    from pyfoobar2k import FoobarRemote
     name = config.get(CONF_NAME)
     host = config.get(CONF_HOST)
     port = config.get(CONF_PORT)
