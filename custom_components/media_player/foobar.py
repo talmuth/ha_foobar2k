@@ -132,7 +132,7 @@ class FoobarDevice(MediaPlayerDevice):
                 self._playlists = [item["name"] for item in playlists_raw]
 
         except Exception as e:
-            _LOGGER.error("Fetching player state failed with an Exception: %s", e)
+            _LOGGER.debug("Fetching player state failed with an Exception: %s", e)
             self._state = STATE_UNKNOWN
 
     @property
