@@ -22,7 +22,7 @@ from homeassistant.const import (
     CONF_PASSWORD, STATE_OFF, STATE_PAUSED, STATE_PLAYING,
     CONF_TIMEOUT, STATE_UNKNOWN, STATE_IDLE)
 
-REQUIREMENTS = ['pyfoobar2k==0.2.2']
+REQUIREMENTS = ['pyfoobar2k==0.2.3']
 
 SCAN_INTERVAL = timedelta(seconds=5)
 _LOGGER = logging.getLogger(__name__)
@@ -105,10 +105,8 @@ class FoobarDevice(MediaPlayerDevice):
     def update(self):
         try:
             info = self._remote.state()
-            if info == 'ConnectTimeout':
+            if info == 'fetchStateFailed':
                 self._state = STATE_OFF
-            elif info == 'UnknownError':
-                self._state = STATE_UNKNOWN
             elif info['isPlaying'] == '1':
                 self._state = STATE_PLAYING
             elif info['isPaused'] == '1':
