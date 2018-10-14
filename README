@@ -6,7 +6,7 @@ https://bitbucket.org/ed0zer/pyfoobar2k
 ###Setup:  
 place foobar.py and pyfoobar2k/ directory (from https://bitbucket.org/ed0zer/pyfoobar2k) into custom_components/media_player/  
 follow instructions in https://bitbucket.org/ed0zer/pyfoobar2k to setup foobar2000 player  
-
+`
 media_player:  
   - platform: foobar  
     host: 192.168.1.100  
@@ -19,3 +19,4 @@ media_player:
     port: 8888  
     username: username  
     password: password  
+`
