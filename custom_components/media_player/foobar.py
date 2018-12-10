@@ -22,7 +22,7 @@ from homeassistant.const import (
     CONF_PASSWORD, STATE_OFF, STATE_PAUSED, STATE_PLAYING,
     CONF_TIMEOUT, STATE_UNKNOWN, STATE_IDLE)
 
-REQUIREMENTS = ['pyfoobar2k==0.2.3']
+REQUIREMENTS = ['pyfoobar2k==0.2.5']
 
 SCAN_INTERVAL = timedelta(seconds=5)
 _LOGGER = logging.getLogger(__name__)
