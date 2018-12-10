@@ -1,6 +1,6 @@
 """ 
 Support for foobar2000 Music Player as media player
-via pyfoobar2k https://bitbucket.org/ed0zer/pyfoorbar2k 
+via pyfoobar2k https://gitlab.com/ed0zer-projects/pyfoobar2k
 And foobar2000 component foo_httpcontrol by oblikoamorale https://bitbucket.org/oblikoamorale/foo_httpcontrol
 """
 
