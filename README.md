@@ -6,7 +6,7 @@ This component requires modifications to your foobar2000 installation
 Check readme of [pyfoobar2k](https://gitlab.com/ed0zer-projects/pyfoobar2k) for more information.      
 
 
-**Home Assistant Setup:** 
+**Home Assistant Setup:**   
 Place `foobar.py` into `<home_assistant_config_directory>/custom_components/media_player/`    
 This component depends on python library [pyfoobar2k](https://gitlab.com/ed0zer-projects/pyfoobar2k)    
 Home Assistant will automatically install the library during startup.  
