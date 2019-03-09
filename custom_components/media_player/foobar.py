@@ -12,10 +12,12 @@ from homeassistant.helpers import script, config_validation as cv
 import homeassistant.util.dt as dt_util
 
 from homeassistant.components.media_player import (
-    MEDIA_TYPE_MUSIC, PLATFORM_SCHEMA, SUPPORT_NEXT_TRACK, SUPPORT_PAUSE,
-    SUPPORT_PREVIOUS_TRACK, SUPPORT_VOLUME_MUTE, SUPPORT_VOLUME_SET,
-    SUPPORT_PLAY, SUPPORT_STOP, SUPPORT_VOLUME_STEP, SUPPORT_SEEK,
-    SUPPORT_SELECT_SOURCE, SUPPORT_TURN_ON, SUPPORT_TURN_OFF, MediaPlayerDevice)
+    PLATFORM_SCHEMA, MediaPlayerDevice)
+
+from homeassistant.components.media_player.const import (
+    MEDIA_TYPE_MUSIC, SUPPORT_VOLUME_STEP, SUPPORT_TURN_ON, SUPPORT_TURN_OFF,
+    SUPPORT_STOP, SUPPORT_SELECT_SOURCE, SUPPORT_SEEK, SUPPORT_VOLUME_SET, SUPPORT_VOLUME_MUTE,
+    SUPPORT_PLAY, SUPPORT_PREVIOUS_TRACK, SUPPORT_NEXT_TRACK, SUPPORT_PAUSE)
 
 from homeassistant.const import (
     CONF_NAME, CONF_HOST, CONF_PORT, CONF_USERNAME,
