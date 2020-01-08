@@ -17,7 +17,7 @@ from homeassistant.components.media_player import (
 from homeassistant.components.media_player.const import (
     MEDIA_TYPE_MUSIC, SUPPORT_VOLUME_STEP, SUPPORT_TURN_ON, SUPPORT_TURN_OFF,
     SUPPORT_STOP, SUPPORT_SELECT_SOURCE, SUPPORT_SEEK, SUPPORT_VOLUME_SET, SUPPORT_VOLUME_MUTE,
-    SUPPORT_PLAY, SUPPORT_PREVIOUS_TRACK, SUPPORT_NEXT_TRACK, SUPPORT_PAUSE)
+    SUPPORT_PLAY, SUPPORT_PREVIOUS_TRACK, SUPPORT_NEXT_TRACK, SUPPORT_PAUSE, SUPPORT_SHUFFLE_SET)
 
 from homeassistant.const import (
     CONF_NAME, CONF_HOST, CONF_PORT, CONF_USERNAME,
@@ -38,7 +38,8 @@ CONF_TURN_OFF_ACTION = 'turn_off_action'
 SUPPORT_FOOBAR_PLAYER = \
     SUPPORT_PAUSE | SUPPORT_VOLUME_SET | SUPPORT_VOLUME_MUTE | \
     SUPPORT_PLAY | SUPPORT_NEXT_TRACK | SUPPORT_PREVIOUS_TRACK | \
-    SUPPORT_STOP | SUPPORT_SEEK | SUPPORT_VOLUME_STEP | SUPPORT_SELECT_SOURCE
+    SUPPORT_STOP | SUPPORT_SEEK | SUPPORT_SHUFFLE_SET | \
+    SUPPORT_VOLUME_STEP | SUPPORT_SELECT_SOURCE
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_HOST): cv.string,
@@ -85,6 +86,7 @@ class FoobarDevice(MediaPlayerDevice):
         self._albumart = ''
         self._current_playlist = ''
         self._playlists = []
+        self._shuffle = 0
         self._selected_source = None
         self._state = STATE_UNKNOWN
         self._base_url = self._remote.url
@@ -122,6 +124,7 @@ class FoobarDevice(MediaPlayerDevice):
                 self._track_artist = info['artist']
                 self._track_album_name = info['album']
                 self._volume = info['volume']
+                self._shuffle = info['playbackorder']
                 self._track_duration = int(info['itemPlayingLen'])
                 self._track_position_updated_at = dt_util.utcnow()
                 self._albumart_path = info['albumArt']
@@ -297,3 +300,13 @@ class FoobarDevice(MediaPlayerDevice):
     def media_playlist(self):
         """Title of Playlist currently playing."""
         return self._current_playlist
+
+    def set_shuffle(self, shuffle):
+        """Send the media player the command to enable/disable shuffle mode."""
+        playback_order = 4 if shuffle else 0
+        self._remote.cmd('PlaybackOrder', playback_order)
+
+    @property
+    def shuffle(self):
+        """Boolean if shuffle is enabled."""
+        return True if int(self._shuffle) == 4 else False
