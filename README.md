@@ -26,6 +26,7 @@ media_player:
     port: 8888
     username: user
     password: pass
+    volume_step: 3
     turn_on_action:
       service: switch.turn_on
       data_template:
