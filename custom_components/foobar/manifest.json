@@ -2,7 +2,7 @@
         "domain": "foobar",
         "name": "foobar2000 media player",
         "documentation": "https://gitlab.com/ed0zer-projects/home-assistant/home-assistant-foobar2k",
-        "requirements": ["pyfoobar2k==0.2.5"],
+        "requirements": ["pyfoobar2k==0.2.6"],
         "dependencies": [],
         "codeowners": ["@ed0zer"]
 }

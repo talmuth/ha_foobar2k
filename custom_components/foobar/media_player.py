@@ -24,7 +24,7 @@ from homeassistant.const import (
     CONF_PASSWORD, STATE_OFF, STATE_PAUSED, STATE_PLAYING,
     CONF_TIMEOUT, STATE_UNKNOWN, STATE_IDLE)
 
-REQUIREMENTS = ['pyfoobar2k==0.2.5']
+REQUIREMENTS = ['pyfoobar2k==0.2.6']
 
 SCAN_INTERVAL = timedelta(seconds=5)
 _LOGGER = logging.getLogger(__name__)
@@ -32,6 +32,8 @@ _LOGGER = logging.getLogger(__name__)
 DEFAULT_NAME = 'Foobar2000'
 DEFAULT_PORT = '8888'
 DEFAULT_TIMEOUT = 3
+DEFAULT_VOLUME_STEP = 5
+CONF_VOLUME_STEP = 'volume_step'
 CONF_TURN_ON_ACTION = 'turn_on_action'
 CONF_TURN_OFF_ACTION = 'turn_off_action'
 
@@ -48,6 +50,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
     vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.port,
     vol.Optional(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): cv.positive_int,
+    vol.Optional(CONF_VOLUME_STEP, default=DEFAULT_VOLUME_STEP): cv.positive_int,
     vol.Optional(CONF_TURN_ON_ACTION, default=None): cv.SCRIPT_SCHEMA,
     vol.Optional(CONF_TURN_OFF_ACTION, default=None): cv.SCRIPT_SCHEMA})
 
@@ -61,17 +64,18 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     username = config.get(CONF_USERNAME)
     password = config.get(CONF_PASSWORD)
     timeout = config.get(CONF_TIMEOUT)
+    volume_step = config.get(CONF_VOLUME_STEP)
     turn_on_action = config.get(CONF_TURN_ON_ACTION)
     turn_off_action = config.get(CONF_TURN_OFF_ACTION)
 
     remote = FoobarRemote(host, port, username, password, timeout)
 
-    add_devices([FoobarDevice(hass, remote, name, turn_on_action, turn_off_action)])
+    add_devices([FoobarDevice(hass, remote, name, volume_step, turn_on_action, turn_off_action)])
 
 
 class FoobarDevice(MediaPlayerDevice):
 
-    def __init__(self, hass, remote, name, turn_on_action=None, turn_off_action=None):
+    def __init__(self, hass, remote, name, volume_step, turn_on_action=None, turn_off_action=None):
 
         self._name = name
         self._remote = remote
@@ -87,6 +91,7 @@ class FoobarDevice(MediaPlayerDevice):
         self._current_playlist = ''
         self._playlists = []
         self._shuffle = 0
+        self._volume_step = volume_step
         self._selected_source = None
         self._state = STATE_UNKNOWN
         self._base_url = self._remote.url
@@ -123,7 +128,7 @@ class FoobarDevice(MediaPlayerDevice):
                 self._track_name = info['title']
                 self._track_artist = info['artist']
                 self._track_album_name = info['album']
-                self._volume = info['volume']
+                self._volume = int(info['volume']) / 100
                 self._shuffle = info['playbackorder']
                 self._track_duration = int(info['itemPlayingLen'])
                 self._track_position_updated_at = dt_util.utcnow()
@@ -156,7 +161,7 @@ class FoobarDevice(MediaPlayerDevice):
     @property
     def volume_level(self):
         """Volume level of the media player (0 to 1)."""
-        return float(self._volume) / 100
+        return float(self._volume)
 
     @property
     def media_content_type(self):
@@ -229,15 +234,15 @@ class FoobarDevice(MediaPlayerDevice):
 
     def set_volume_level(self, volume):
         """Send the media player the command for setting the volume."""
-        self._remote.cmd('Volume', str(volume * 100))
+        self._remote.cmd('Volume', int(volume * 100))
 
     def volume_up(self):
         """Send the media player the command for volume down."""
-        self._remote.cmd('VolumeDelta', str(int(self.volume_level + 5.0)))
+        self._remote.cmd('VolumeDelta', self._volume_step)
 
     def volume_down(self):
         """Send the media player the command for volume down."""
-        self._remote.cmd('VolumeDelta', str(int(self.volume_level - 5.0)))
+        self._remote.cmd('VolumeDelta', -self._volume_step)
 
     def mute_volume(self, mute):
         """Mute the volume."""
