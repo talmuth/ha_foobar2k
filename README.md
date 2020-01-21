@@ -11,14 +11,14 @@ Place `foobar` directory into `<home_assistant_config_directory>/custom_componen
 This component depends on python library [pyfoobar2k](https://gitlab.com/ed0zer-projects/pyfoobar2k)    
 Home Assistant will automatically install the library during startup.  
 
-Minimal configuration example:  
+Minimal required configuration example:  
 ```
 media_player:  
   - platform: foobar  
     host: 192.168.1.100  
 ```
 
-Full configuration example:    
+Complete configuration example with optional configuration options and their default values:       
 ```
 media_player:  
   - platform: foobar
@@ -26,7 +26,7 @@ media_player:
     port: 8888
     username: user
     password: pass
-    volume_step: 3
+    volume_step: 5
     turn_on_action:
       service: switch.turn_on
       data_template:
@@ -35,6 +35,7 @@ media_player:
       service: switch.turn_off
       data_template:
         entity_id: switch.foobar2k
-```
+```  
 
 
+If you like this project [Buy Me A Beer?](https://buymeacoffee.com/ed0zer)
