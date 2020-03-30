@@ -24,7 +24,7 @@ from homeassistant.const import (
     CONF_PASSWORD, STATE_OFF, STATE_PAUSED, STATE_PLAYING,
     CONF_TIMEOUT, STATE_UNKNOWN, STATE_IDLE)
 
-REQUIREMENTS = ['pyfoobar2k==0.2.6']
+REQUIREMENTS = ['pyfoobar2k==0.2.8']
 
 SCAN_INTERVAL = timedelta(seconds=5)
 _LOGGER = logging.getLogger(__name__)
@@ -114,14 +114,15 @@ class FoobarDevice(MediaPlayerDevice):
     def update(self):
         try:
             info = self._remote.state()
-            if info == 'fetchStateFailed':
-                self._state = STATE_OFF
-            elif info['isPlaying'] == '1':
-                self._state = STATE_PLAYING
-            elif info['isPaused'] == '1':
-                self._state = STATE_PAUSED
+            if info:
+                if info['isPlaying'] == '1':
+                    self._state = STATE_PLAYING
+                elif info['isPaused'] == '1':
+                    self._state = STATE_PAUSED
+                else:
+                    self._state = STATE_IDLE
             else:
-                self._state = STATE_IDLE
+                self._state = STATE_OFF
             self.schedule_update_ha_state()
 
             if self._state == STATE_PLAYING:
@@ -133,14 +134,18 @@ class FoobarDevice(MediaPlayerDevice):
                 self._track_duration = int(info['itemPlayingLen'])
                 self._track_position_updated_at = dt_util.utcnow()
                 self._albumart_path = info['albumArt']
-                sources_info = self._remote.playlist()
-                current_playlist_position = int(sources_info['playlistActive'])
-                playlists_raw = sources_info['playlists']
-                self._current_playlist = playlists_raw[current_playlist_position]['name']
-                self._playlists = [item["name"] for item in playlists_raw]
 
+            if self._state in [STATE_PLAYING, STATE_PAUSED, STATE_IDLE]:
+                sources_info = self._remote.playlist()
+                if sources_info:
+                    current_playlist_position = int(sources_info['playlistActive'])
+                    playlists_raw = sources_info['playlists']
+                    self._current_playlist = playlists_raw[current_playlist_position]['name']
+                    self._playlists = [item["name"] for item in playlists_raw]
+                else:
+                    _LOGGER.warning("Updating %s sources failed:", self._name)
         except Exception as e:
-            _LOGGER.debug("Fetching player state failed with an Exception: %s", e)
+            _LOGGER.error("Updating %s state failed: %s", self._name, e)
             self._state = STATE_UNKNOWN
 
     @property
