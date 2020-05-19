@@ -125,15 +125,16 @@ class FoobarDevice(MediaPlayerDevice):
                 self._state = STATE_OFF
             self.schedule_update_ha_state()
 
-            if self._state == STATE_PLAYING:
+            if self._state in [STATE_PLAYING, STATE_PAUSED]:
                 self._track_name = info['title']
                 self._track_artist = info['artist']
                 self._track_album_name = info['album']
                 self._volume = int(info['volume']) / 100
                 self._shuffle = info['playbackorder']
                 self._track_duration = int(info['itemPlayingLen'])
-                self._track_position_updated_at = dt_util.utcnow()
                 self._albumart_path = info['albumArt']
+                self._track_position = int(info['itemPlayingPos'])
+                self._track_position_updated_at = dt_util.utcnow()
 
             if self._state in [STATE_PLAYING, STATE_PAUSED, STATE_IDLE]:
                 sources_info = self._remote.playlist()
@@ -269,8 +270,7 @@ class FoobarDevice(MediaPlayerDevice):
     @property
     def media_position(self):
         """Position of current playing media in seconds."""
-        if self._state == STATE_PLAYING:
-            self._track_position = int(self._remote.state()['itemPlayingPos'])
+        if self._state in [STATE_PLAYING, STATE_PAUSED]:
             return self._track_position
 
     def media_seek(self, position):
