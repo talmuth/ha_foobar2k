@@ -4,5 +4,6 @@
         "documentation": "https://gitlab.com/ed0zer-projects/home-assistant/home-assistant-foobar2k",
         "requirements": ["pyfoobar2k==0.2.8"],
         "dependencies": [],
-        "codeowners": ["@ed0zer"]
+        "codeowners": ["@ed0zer"],
+        "version": "0.1"
 }
