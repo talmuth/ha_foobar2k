@@ -11,8 +11,10 @@ import voluptuous as vol
 from homeassistant.helpers import script, config_validation as cv
 import homeassistant.util.dt as dt_util
 
-from homeassistant.components.media_player import (
-    PLATFORM_SCHEMA, MediaPlayerDevice)
+try:
+    from homeassistant.components.media_player import PLATFORM_SCHEMA, MediaPlayerEntity
+except ImportError:
+    from homeassistant.components.media_player import PLATFORM_SCHEMA, MediaPlayerDevice as MediaPlayerEntity
 
 from homeassistant.components.media_player.const import (
     MEDIA_TYPE_MUSIC, SUPPORT_VOLUME_STEP, SUPPORT_TURN_ON, SUPPORT_TURN_OFF,
@@ -73,7 +75,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     add_devices([FoobarDevice(hass, remote, name, volume_step, turn_on_action, turn_off_action)])
 
 
-class FoobarDevice(MediaPlayerDevice):
+class FoobarDevice(MediaPlayerEntity):
 
     def __init__(self, hass, remote, name, volume_step, turn_on_action=None, turn_off_action=None):
 
