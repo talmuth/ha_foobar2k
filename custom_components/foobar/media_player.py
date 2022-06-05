@@ -172,6 +172,11 @@ class FoobarDevice(MediaPlayerEntity):
         return float(self._volume)
 
     @property
+    def is_volume_muted(self):
+        """Return True if volume is muted."""
+        return float(self._volume) == 0
+
+    @property
     def media_content_type(self):
         """Content type of current playing media."""
         return MEDIA_TYPE_MUSIC
