@@ -7,6 +7,5 @@
         "documentation": "https://github.com/talmuth/ha_foobar2k",
         "requirements": ["pyfoobar2k==0.2.8"],
         "dependencies": [],
-        "version": "0.0.0",
-        "zip_release": false
+        "version": "0.0.0"
 }
