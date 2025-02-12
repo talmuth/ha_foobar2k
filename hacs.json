@@ -1,0 +1,6 @@
+{
+    "name": "Foobar2000 Integration",
+    "url": "https://github.com/talmuth/ha_foobar2k",
+    "homeassistant": "2025.2.0",
+    "country": "US"
+} 
