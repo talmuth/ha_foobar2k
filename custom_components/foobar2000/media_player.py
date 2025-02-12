@@ -1,44 +1,35 @@
-"""
-Support for foobar2000 Music Player as media player
+"""Support for foobar2000 Music Player as media player.
+
 via pyfoobar2k https://gitlab.com/ed0zer-projects/pyfoobar2k
 And foobar2000 component foo_httpcontrol by oblikoamorale https://bitbucket.org/oblikoamorale/foo_httpcontrol
 """
 
-import logging
 from datetime import timedelta
+import logging
 
 import voluptuous as vol
-from homeassistant.helpers import script, config_validation as cv
-from homeassistant.core import HomeAssistant
-import homeassistant.util.dt as dt_util
 
-try:
-    from homeassistant.components.media_player import PLATFORM_SCHEMA, MediaPlayerEntity
-except ImportError:
-    from homeassistant.components.media_player import (
-        PLATFORM_SCHEMA,
-        MediaPlayerDevice as MediaPlayerEntity,
-    )
-
+from homeassistant.components.media_player import PLATFORM_SCHEMA, MediaPlayerEntity
 from homeassistant.components.media_player.const import (
-    MediaType,
     MediaPlayerEntityFeature,
+    MediaType,
 )
-
-
 from homeassistant.const import (
-    CONF_NAME,
     CONF_HOST,
-    CONF_PORT,
-    CONF_USERNAME,
+    CONF_NAME,
     CONF_PASSWORD,
+    CONF_PORT,
+    CONF_TIMEOUT,
+    CONF_USERNAME,
+    STATE_IDLE,
     STATE_OFF,
     STATE_PAUSED,
     STATE_PLAYING,
-    CONF_TIMEOUT,
     STATE_UNKNOWN,
-    STATE_IDLE,
 )
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers import config_validation as cv, script
+import homeassistant.util.dt as dt_util
 
 REQUIREMENTS = ["pyfoobar2k==0.2.8"]
 
@@ -104,9 +95,51 @@ def setup_platform(hass: HomeAssistant, config, add_devices, discovery_info=None
 
 
 class FoobarDevice(MediaPlayerEntity):
+    """Representation of a Foobar2000 media player device.
+
+    This class provides an interface to control and monitor a Foobar2000 media player
+    through Home Assistant. It supports various media player functionalities such as
+    play, pause, stop, volume control, track navigation, and playlist management.
+
+    Attributes:
+        _name (str): Name of the media player.
+        _remote (FoobarRemote): Instance of the FoobarRemote to communicate with the media player.
+        hass (HomeAssistant): Home Assistant instance.
+        _volume (float): Current volume level of the media player.
+        _track_name (str): Name of the current track.
+        _track_artist (str): Artist of the current track.
+        _track_album_name (str): Album name of the current track.
+        _track_duration (int): Duration of the current track in seconds.
+        _track_position (int): Current position of the track in seconds.
+        _track_position_updated_at (datetime): Timestamp when the track position was last updated.
+        _albumart (str): URL of the album art for the current track.
+        _current_playlist (str): Name of the current playlist.
+        _playlists (list): List of available playlists.
+        _shuffle (int): Shuffle status of the media player.
+        _volume_step (int): Step size for volume changes.
+        _selected_source (str): Currently selected source.
+        _state (str): Current state of the media player.
+        _base_url (str): Base URL for the FoobarRemote.
+        _albumart_path (str): Path to the album art image.
+        _turn_on_action (Script): Script to run when turning on the media player.
+        _turn_off_action (Script): Script to run when turning off the media player.
+
+    """
+
     def __init__(
         self, hass, remote, name, volume_step, turn_on_action=None, turn_off_action=None
-    ):
+    ) -> None:
+        """Initialize the FoobarDevice.
+
+        Args:
+            hass: Home Assistant instance.
+            remote: FoobarRemote instance.
+            name: Name of the media player.
+            volume_step: Step size for volume changes.
+            turn_on_action: Script to run when turning on the media player.
+            turn_off_action: Script to run when turning off the media player.
+
+        """
         self._name = name
         self._remote = remote
         self.hass = hass
@@ -131,14 +164,14 @@ class FoobarDevice(MediaPlayerEntity):
             turn_on_action = script.Script(
                 self.hass,
                 turn_on_action,
-                "{} turn ON script".format(self.name),
+                f"{self.name} turn ON script",
                 self.async_update_ha_state(True),
             )
         if turn_off_action is not None:
             turn_off_action = script.Script(
                 self.hass,
                 turn_off_action,
-                "{} turn OFF script".format(self.name),
+                f"{self.name} turn OFF script",
                 self.async_update_ha_state(True),
             )
 
@@ -146,6 +179,20 @@ class FoobarDevice(MediaPlayerEntity):
         self._turn_off_action = turn_off_action
 
     def update(self):
+        """Update the state and attributes of the media player.
+
+        This method retrieves the current state and attributes from the remote
+        media player and updates the internal state accordingly. It handles
+        different states such as playing, paused, idle, and off. Additionally,
+        it updates the track information, volume, shuffle status, and playlist
+        information.
+
+        Raises:
+            ConnectionError: If there is a connection issue with the remote media player.
+            TimeoutError: If the request to the remote media player times out.
+            ValueError: If there is an issue with the data received from the remote media player.
+
+        """
         try:
             info = self._remote.state()
             if info:
@@ -181,7 +228,7 @@ class FoobarDevice(MediaPlayerEntity):
                     self._playlists = [item["name"] for item in playlists_raw]
                 else:
                     _LOGGER.warning("Updating %s sources failed:", self._name)
-        except Exception as e:
+        except (ConnectionError, TimeoutError, ValueError) as e:
             _LOGGER.error("Updating %s state failed: %s", self._name, e)
             self._state = STATE_UNKNOWN
 
@@ -245,14 +292,14 @@ class FoobarDevice(MediaPlayerEntity):
         if self._turn_on_action is not None:
             self._turn_on_action.run(variables={"entity_id": self.entity_id})
         else:
-            _LOGGER.warning("turn_on requested but turn_on_action is none")
+            _LOGGER.warning("Action turn_on requested but turn_on_action is none")
 
     def turn_off(self):
         """Execute turn_off_action to turn on media player."""
         if self._turn_off_action is not None:
             self._turn_off_action.run(variables={"entity_id": self.entity_id})
         else:
-            _LOGGER.warning("turn_off requested but turn_off_action is none")
+            _LOGGER.warning("Action turn_off requested but turn_off_action is none")
 
     def media_play_pause(self):
         """Send the media player the command for play/pause."""
@@ -313,6 +360,7 @@ class FoobarDevice(MediaPlayerEntity):
         """Position of current playing media in seconds."""
         if self._state in [STATE_PLAYING, STATE_PAUSED]:
             return self._track_position
+        return None
 
     def media_seek(self, position):
         """Send the media player the command to seek in current playing media."""
@@ -322,7 +370,7 @@ class FoobarDevice(MediaPlayerEntity):
     def media_image_url(self):
         """Image url of current playing media."""
         if "cover_not_available" not in self._albumart_path:
-            self._albumart = "{}/{}".format(self._base_url, self._albumart_path)
+            self._albumart = f"{self._base_url}/{self._albumart_path}"
         return self._albumart
 
     @property
@@ -341,9 +389,9 @@ class FoobarDevice(MediaPlayerEntity):
         source_position = [
             index for index, item in enumerate(playlists) if item["name"] == source
         ][0]
-        """ignoring first playlist in playlists index"""
+        # ignoring first playlist in playlists index
         if source_position == 0:
-            return None
+            return
         if source_position is not None:
             self._remote.cmd("SwitchPlaylist", source_position)
             self._remote.cmd("Start", 0)
@@ -362,4 +410,4 @@ class FoobarDevice(MediaPlayerEntity):
     @property
     def shuffle(self):
         """Boolean if shuffle is enabled."""
-        return True if int(self._shuffle) == 4 else False
+        return int(self._shuffle) == 4
