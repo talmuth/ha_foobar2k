@@ -1,5 +1,5 @@
 {
-        "domain": "foobar",
+        "domain": "foobar2000",
         "name": "foobar2000 media player integration",
         "after_dependencies": ["media_source", "media_player"],
         "codeowners": ["@talmuth"],
