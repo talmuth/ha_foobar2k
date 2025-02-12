@@ -14,7 +14,8 @@ Refer to the [pyfoobar2k documentation](https://gitlab.com/ed0zer-projects/pyfoo
 ### Manually
 
 1. Place the `foobar2000` directory into:
-   ```
+
+   ```yaml
    <home_assistant_config_directory>/custom_components/
    ```
 
@@ -45,7 +46,7 @@ Home Assistant will automatically install it during startup.
 
 ## 📝 Configuration Examples
 
-### ✅ Minimal Required Configuration:
+### ✅ Minimal Required Configuration
 
 ```yaml
 media_player:
@@ -53,7 +54,7 @@ media_player:
     host: 192.168.1.100
 ```
 
-### 🔹 Complete Configuration Example:
+### 🔹 Complete Configuration Example
 
 ```yaml
 media_player:
@@ -90,4 +91,3 @@ If you find this project helpful, consider supporting me:
 [☕ Buy Me a Coffee](https://buymeacoffee.com/talmuth)
 
 ---
-

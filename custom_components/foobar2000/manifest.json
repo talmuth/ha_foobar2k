@@ -6,6 +6,7 @@
         "dependencies": [],
         "documentation": "https://github.com/talmuth/ha_foobar2k",
         "iot_class": "local_push",
+        "issue_tracker": "https://github.com/talmuth/ha_foobar2k/issues",
         "requirements": ["pyfoobar2k==0.2.8"],
         "version": "0.0.1"
 }
