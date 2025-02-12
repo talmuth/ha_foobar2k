@@ -9,6 +9,7 @@ from datetime import timedelta
 
 import voluptuous as vol
 from homeassistant.helpers import script, config_validation as cv
+from homeassistant.core import HomeAssistant
 import homeassistant.util.dt as dt_util
 
 try:
@@ -81,7 +82,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 )
 
 
-def setup_platform(hass, config, add_devices, discovery_info=None):
+def setup_platform(hass: HomeAssistant, config, add_devices, discovery_info=None):
     """Set up the Foobar Player platform."""
     from pyfoobar2k import FoobarRemote
 
