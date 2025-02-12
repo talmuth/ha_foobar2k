@@ -1,1 +1,1 @@
-"""foobar2000 media player custom component init file"""
+"""foobar2000 media player custom component init file."""
