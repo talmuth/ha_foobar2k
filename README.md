@@ -78,6 +78,18 @@ media_player:
 
 ---
 
+## 🧑‍💻 Development
+
+Everything runs inside the devcontainer, which is built on the official Home Assistant image
+(see `.devcontainer/Dockerfile`). Open the repo in VS Code and choose **Reopen in Container**, then:
+
+- `scripts/develop` – start Home Assistant with this integration loaded (UI on http://localhost:8123, config in `config/`)
+- `scripts/test` – run the test suite with coverage
+- `scripts/lint` – format and lint with Ruff
+
+To move to a newer Home Assistant, bump `HA_VERSION` in `.devcontainer/Dockerfile` together with
+`pytest-homeassistant-custom-component` in `pyproject.toml` (it pins the matching `homeassistant` version).
+
 ## 🏆 Credits
 
 This project is based on work originally created by [@ed0zer](https://gitlab.com/ed0zer-projects/home-assistant/home-assistant-foobar2k).  

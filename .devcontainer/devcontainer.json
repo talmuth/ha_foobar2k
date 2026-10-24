@@ -1,0 +1,37 @@
+{
+  "name": "ha_foobar2k",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspaces/ha_foobar2k",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/ha_foobar2k,type=bind",
+  "overrideCommand": true,
+  "forwardPorts": [8123],
+  "portsAttributes": {
+    "8123": { "label": "Home Assistant", "onAutoForward": "notify" }
+  },
+  "runArgs": ["--add-host=host.docker.internal:host-gateway"],
+  "containerEnv": {
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "charliermarsh.ruff",
+        "ms-python.python",
+        "github.vscode-github-actions",
+        "redhat.vscode-yaml"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python3",
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": ["tests"],
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true
+        }
+      }
+    }
+  }
+}

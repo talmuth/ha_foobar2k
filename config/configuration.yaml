@@ -1,0 +1,14 @@
+# Development config for scripts/develop. Everything else in config/ is gitignored.
+default_config:
+
+logger:
+  default: info
+  logs:
+    custom_components.foobar2000: debug
+    pyfoobar2k: debug
+
+media_player:
+  - platform: foobar2000
+    # foobar2000 with foo_httpcontrol running on the Docker host
+    host: host.docker.internal
+    port: 8888

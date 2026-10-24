@@ -3,22 +3,21 @@ name = "ha_foobar2k"
 version = "0.0.1"
 description = "Foobar2000 media player control in Home Assistant - play your music like it is 1999!"
 readme = "README.md"
-requires-python = "==3.13.1"
+requires-python = ">=3.14.2"
 dependencies = [
-    "aiohttp>=3.9.3",
-    "homeassistant>=2025.2.0",
     "pyfoobar2k==0.2.8",
-    "pytest-aiohttp==1.0.5",
-    "pytest-asyncio==0.24.0",
-    "pytest-homeassistant-custom-component==0.13.190",
-    "pytest-timeout==2.3.1",
-    "pytest==8.3.3",
-    "pytest-cov>=4.1.0",
-    "ruff>=0.8.4",
+]
+
+# Installed on top of the Home Assistant image (see .devcontainer/Dockerfile).
+# pytest-homeassistant-custom-component pins homeassistant, so it must match the image tag.
+[dependency-groups]
+dev = [
+    "pytest-homeassistant-custom-component==0.13.373",
+    "ruff>=0.14",
 ]
 
 [tool.ruff]
-target-version = "py313"
+target-version = "py314"
 line-length = 120
 
 [tool.ruff.lint]
@@ -30,17 +29,17 @@ select = [
     "B",  # flake8-bugbear
 ]
 
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+known-first-party = ["custom_components"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-testpaths = ["tests"]
-norecursedirs = [".git"]
-pythonpath = "."
 asyncio_default_fixture_loop_scope = "function"
-
+testpaths = ["tests"]
+norecursedirs = [".git", "config"]
+pythonpath = "."
 filterwarnings = [
-    "error",
-    "ignore::RuntimeWarning",
-    "ignore::DeprecationWarning",
-
+    # Fail on warnings raised by this integration only; HA core emits its own deprecations.
+    "error:::custom_components\\.foobar2000",
 ]

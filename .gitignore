@@ -3,3 +3,12 @@ dist/
 *.egg-info/
 __pycache__/
 .idea/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+
+# HA dev instance state; only the config file is tracked
+config/*
+!config/configuration.yaml

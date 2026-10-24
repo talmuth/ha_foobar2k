@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Run Home Assistant with this integration loaded, using ./config as the config dir.
+set -e
+cd "$(dirname "$0")/.."
+
+mkdir -p config
+[ -L config/custom_components ] || ln -sfn ../custom_components config/custom_components
+
+exec hass --config "${PWD}/config" --debug "$@"

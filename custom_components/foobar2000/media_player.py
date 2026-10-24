@@ -7,8 +7,6 @@ And foobar2000 component foo_httpcontrol by oblikoamorale https://bitbucket.org/
 from datetime import timedelta
 import logging
 
-import voluptuous as vol
-
 from homeassistant.components.media_player import PLATFORM_SCHEMA, MediaPlayerEntity
 from homeassistant.components.media_player.const import (
     MediaPlayerEntityFeature,
@@ -28,8 +26,10 @@ from homeassistant.const import (
     STATE_UNKNOWN,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import config_validation as cv, script
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import script
 import homeassistant.util.dt as dt_util
+import voluptuous as vol
 
 REQUIREMENTS = ["pyfoobar2k==0.2.8"]
 
@@ -89,9 +89,7 @@ def setup_platform(hass: HomeAssistant, config, add_devices, discovery_info=None
 
     remote = FoobarRemote(host, port, username, password, timeout)
 
-    add_devices(
-        [FoobarDevice(hass, remote, name, volume_step, turn_on_action, turn_off_action)]
-    )
+    add_devices([FoobarDevice(hass, remote, name, volume_step, turn_on_action, turn_off_action)])
 
 
 class FoobarDevice(MediaPlayerEntity):
@@ -126,9 +124,7 @@ class FoobarDevice(MediaPlayerEntity):
 
     """
 
-    def __init__(
-        self, hass, remote, name, volume_step, turn_on_action=None, turn_off_action=None
-    ) -> None:
+    def __init__(self, hass, remote, name, volume_step, turn_on_action=None, turn_off_action=None) -> None:
         """Initialize the FoobarDevice.
 
         Args:
@@ -222,9 +218,7 @@ class FoobarDevice(MediaPlayerEntity):
                 if sources_info:
                     current_playlist_position = int(sources_info["playlistActive"])
                     playlists_raw = sources_info["playlists"]
-                    self._current_playlist = playlists_raw[current_playlist_position][
-                        "name"
-                    ]
+                    self._current_playlist = playlists_raw[current_playlist_position]["name"]
                     self._playlists = [item["name"] for item in playlists_raw]
                 else:
                     _LOGGER.warning("Updating %s sources failed:", self._name)
@@ -386,9 +380,7 @@ class FoobarDevice(MediaPlayerEntity):
     def select_source(self, source):
         """Select input source."""
         playlists = self._remote.playlist()["playlists"]
-        source_position = [
-            index for index, item in enumerate(playlists) if item["name"] == source
-        ][0]
+        source_position = [index for index, item in enumerate(playlists) if item["name"] == source][0]
         # ignoring first playlist in playlists index
         if source_position == 0:
             return

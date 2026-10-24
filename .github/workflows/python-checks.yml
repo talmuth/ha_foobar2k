@@ -1,0 +1,35 @@
+name: Python Checks
+
+on:
+  push:
+    branches: [master, dev]
+  pull_request:
+
+jobs:
+  lint-and-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # Same image as the devcontainer: the official HA image plus our dev dependencies.
+      # (JS actions can't run inside Alpine job containers, so the steps use docker run.)
+      - name: Build dev image
+        run: docker build -t ha_foobar2k-dev -f .devcontainer/Dockerfile .
+
+      - name: Lint with Ruff
+        run: |
+          docker run --rm -v "$PWD:/workspaces/ha_foobar2k" ha_foobar2k-dev \
+            sh -c "ruff check --output-format=github . && ruff format --check ."
+
+      - name: Run tests with coverage
+        run: |
+          docker run --rm -v "$PWD:/workspaces/ha_foobar2k" ha_foobar2k-dev \
+            bash scripts/test --cov-report=xml --timeout=30
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
