@@ -18,6 +18,7 @@ from homeassistant.const import (
     CONF_PASSWORD,
     CONF_PORT,
     CONF_TIMEOUT,
+    CONF_UNIQUE_ID,
     CONF_USERNAME,
     STATE_IDLE,
     STATE_OFF,
@@ -65,6 +66,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional(CONF_USERNAME): cv.string,
         vol.Optional(CONF_PASSWORD): cv.string,
         vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
+        vol.Optional(CONF_UNIQUE_ID): cv.string,
         vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.port,
         vol.Optional(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): cv.positive_int,
         vol.Optional(CONF_VOLUME_STEP, default=DEFAULT_VOLUME_STEP): cv.positive_int,
@@ -88,10 +90,30 @@ def setup_platform(hass: HomeAssistant, config, add_devices, discovery_info=None
     volume_step = config.get(CONF_VOLUME_STEP)
     turn_on_action = config.get(CONF_TURN_ON_ACTION)
     turn_off_action = config.get(CONF_TURN_OFF_ACTION)
+    unique_id = config.get(CONF_UNIQUE_ID)
 
     remote = FoobarRemote(host, port, username, password, timeout)
 
-    add_devices([FoobarDevice(hass, remote, name, volume_step, turn_on_action, turn_off_action)], True)
+    add_devices([FoobarDevice(hass, remote, name, volume_step, turn_on_action, turn_off_action, unique_id)], True)
+
+
+class _QuietPollErrors(logging.Filter):
+    """Demote pyfoobar2k's per-poll connection errors to debug.
+
+    pyfoobar2k logs an error on every failed poll, which floods the log while foobar2000 isn't running.
+    FoobarDevice logs reachability changes once instead.
+    """
+
+    def filter(self, record):
+        if record.levelno >= logging.ERROR and str(record.msg).startswith(
+            ("Fetching player state failed", "Fetching playlist info failed")
+        ):
+            record.levelno, record.levelname = logging.DEBUG, "DEBUG"
+            return logging.getLogger(record.name).isEnabledFor(logging.DEBUG)
+        return True
+
+
+logging.getLogger("pyfoobar2k.foobarhttp").addFilter(_QuietPollErrors())
 
 
 class FoobarDevice(MediaPlayerEntity):
@@ -123,10 +145,13 @@ class FoobarDevice(MediaPlayerEntity):
         _albumart_path (str): Path to the album art image.
         _turn_on_action (Script): Script to run when turning on the media player.
         _turn_off_action (Script): Script to run when turning off the media player.
+        _poll_error (str | None): Why the last poll failed ("offline" or "bad_response"), None if it succeeded.
 
     """
 
-    def __init__(self, hass, remote, name, volume_step, turn_on_action=None, turn_off_action=None) -> None:
+    def __init__(
+        self, hass, remote, name, volume_step, turn_on_action=None, turn_off_action=None, unique_id=None
+    ) -> None:
         """Initialize the FoobarDevice.
 
         Args:
@@ -136,8 +161,11 @@ class FoobarDevice(MediaPlayerEntity):
             volume_step: Step size for volume changes.
             turn_on_action: Script to run when turning on the media player.
             turn_off_action: Script to run when turning off the media player.
+            unique_id: Optional unique ID, which lets the entity be managed from the UI.
 
         """
+        self._attr_unique_id = unique_id
+        self._poll_error = None
         self._name = name
         self._remote = remote
         self.hass = hass
@@ -175,10 +203,8 @@ class FoobarDevice(MediaPlayerEntity):
         it updates the track information, volume, shuffle status, and playlist
         information.
 
-        Raises:
-            ConnectionError: If there is a connection issue with the remote media player.
-            TimeoutError: If the request to the remote media player times out.
-            ValueError: If there is an issue with the data received from the remote media player.
+        An unreachable player is reported as off rather than unavailable, so turn_on_action can still start it.
+        Reachability changes and unexpected responses are logged once, not on every poll.
 
         """
         try:
@@ -191,6 +217,7 @@ class FoobarDevice(MediaPlayerEntity):
                 else:
                     self._state = STATE_IDLE
             else:
+                self._set_poll_error("offline", "%s is not responding, will keep polling", self._name)
                 self._state = STATE_OFF
 
             if self._state in [STATE_PLAYING, STATE_PAUSED]:
@@ -213,9 +240,27 @@ class FoobarDevice(MediaPlayerEntity):
                     self._playlists = [item["name"] for item in playlists_raw]
                 else:
                     _LOGGER.warning("Updating %s sources failed:", self._name)
-        except (ConnectionError, TimeoutError, ValueError) as e:
-            _LOGGER.error("Updating %s state failed: %s", self._name, e)
+        except (ValueError, KeyError, IndexError, TypeError) as e:
+            # ValueError covers non-JSON responses, e.g. foo_httpcontrol serving its default HTML template
+            self._set_poll_error(
+                "bad_response",
+                "%s returned an unexpected response (%s: %s); check that the pyfoobar2k template is installed "
+                "in foo_httpcontrol's 'pyfoobar2k' folder",
+                self._name,
+                type(e).__name__,
+                e,
+                level=logging.ERROR,
+            )
             self._state = STATE_UNKNOWN
+            return
+        if info:
+            self._set_poll_error(None, "%s is responding again", self._name)
+
+    def _set_poll_error(self, poll_error, msg, *args, level=logging.INFO):
+        """Record why the last poll failed (None if it succeeded), logging only when that changes."""
+        previous, self._poll_error = self._poll_error, poll_error
+        if previous != poll_error:
+            _LOGGER.log(level, msg, *args)
 
     @property
     def name(self):

@@ -9,6 +9,11 @@ This custom component allows Home Assistant to control the **Foobar2000** media 
 This component requires modifications to your **Foobar2000** installation.
 Refer to the [pyfoobar2k documentation](https://gitlab.com/ed0zer-projects/pyfoobar2k) for setup instructions.
 
+> **Note:** the pyfoobar2k template files must go in their own `pyfoobar2k` folder inside foo_httpcontrol's
+> templates directory (next to `default`, not inside it). Opening `http://<host>:<port>/pyfoobar2k` should return
+> the pyfoobar2k template, not foobar2000's default web page. If it doesn't, the Home Assistant log will show an
+> "unexpected response" error for the player.
+
 ## 🛠 Installation
 
 ### Manually
@@ -35,6 +40,7 @@ Home Assistant will automatically install it during startup.
 | `host`            | `string`          | ✅ Yes    | —             | The hostname or IP address of the device running **Foobar2000**.                  |
 | `port`            | `integer`         | ❌ No     | `8888`        | The port number used by the **foo_httpcontrol** plugin.                          |
 | `name`            | `string`          | ❌ No     | `Foobar2000`  | The name displayed in the Home Assistant frontend.                                |
+| `unique_id`       | `string`          | ❌ No     | —             | Unique ID, so the entity can be renamed, given an area or disabled in the UI.     |
 | `username`        | `string`          | ❌ No     | —             | The username for **foo_httpcontrol** authentication.                             |
 | `password`        | `string`          | ❌ No     | —             | The password for **foo_httpcontrol** authentication.                             |
 | `turn_on_action`  | `list`            | ❌ No     | —             | Home Assistant script sequence to call when `media_player.turn_on` is triggered.  |
@@ -60,6 +66,7 @@ media_player:
 media_player:
   - platform: foobar2000
     name: Foobar2000
+    unique_id: foobar2000_living_room
     host: 192.168.1.100
     port: 8888
     timeout: 3
@@ -83,7 +90,7 @@ media_player:
 Everything runs inside the devcontainer, which is built on the official Home Assistant image
 (see `.devcontainer/Dockerfile`). Open the repo in VS Code and choose **Reopen in Container**, then:
 
-- `scripts/develop` – start Home Assistant with this integration loaded (UI on http://localhost:8123, config in `config/`)
+- `scripts/develop` – start Home Assistant with this integration loaded (UI on <http://localhost:8123>, config in `config/`)
 - `scripts/test` – run the test suite with coverage
 - `scripts/lint` – format and lint with Ruff
 
