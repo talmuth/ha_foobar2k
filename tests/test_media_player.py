@@ -1,10 +1,12 @@
 """Test the foobar2000 media player platform."""
 
 from homeassistant.components.media_player import DOMAIN as MP_DOMAIN
+from homeassistant.components.media_player import MediaPlayerEntityFeature
 from homeassistant.const import ATTR_ENTITY_ID, STATE_PLAYING
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_component import async_update_entity
 from homeassistant.setup import async_setup_component
+from pytest_homeassistant_custom_component.common import async_mock_service
 
 ENTITY_ID = "media_player.foobar2000"
 
@@ -16,9 +18,8 @@ async def _setup(hass: HomeAssistant, **extra) -> None:
 
 
 async def test_setup_and_update(hass: HomeAssistant, mock_remote) -> None:
-    """Entity is created from YAML and reflects the player state after a poll."""
+    """Entity is created from YAML and reflects the player state right away."""
     await _setup(hass)
-    await async_update_entity(hass, ENTITY_ID)
 
     state = hass.states.get(ENTITY_ID)
     assert state.state == STATE_PLAYING
@@ -55,3 +56,32 @@ async def test_services(hass: HomeAssistant, mock_remote) -> None:
         mock_remote.cmd.reset_mock()
         await hass.services.async_call(MP_DOMAIN, service, {ATTR_ENTITY_ID: ENTITY_ID} | data, blocking=True)
         assert [c.args for c in mock_remote.cmd.call_args_list] == expected, service
+
+
+async def test_no_turn_on_off_without_actions(hass: HomeAssistant, mock_remote) -> None:
+    """Turn on/off are only supported when the corresponding action is configured."""
+    await _setup(hass)
+
+    features = hass.states.get(ENTITY_ID).attributes["supported_features"]
+    assert not features & MediaPlayerEntityFeature.TURN_ON
+    assert not features & MediaPlayerEntityFeature.TURN_OFF
+
+
+async def test_turn_on_off_actions(hass: HomeAssistant, mock_remote) -> None:
+    """Turn on/off run the configured scripts with the entity_id variable."""
+    calls = async_mock_service(hass, "test", "power")
+    await _setup(
+        hass,
+        turn_on_action={"action": "test.power", "data": {"on": True, "entity": "{{ entity_id }}"}},
+        turn_off_action={"action": "test.power", "data": {"on": False, "entity": "{{ entity_id }}"}},
+    )
+
+    features = hass.states.get(ENTITY_ID).attributes["supported_features"]
+    assert features & MediaPlayerEntityFeature.TURN_ON
+    assert features & MediaPlayerEntityFeature.TURN_OFF
+
+    for service in ("turn_on", "turn_off"):
+        await hass.services.async_call(MP_DOMAIN, service, {ATTR_ENTITY_ID: ENTITY_ID}, blocking=True)
+    await hass.async_block_till_done()
+
+    assert [c.data for c in calls] == [{"on": True, "entity": ENTITY_ID}, {"on": False, "entity": ENTITY_ID}]

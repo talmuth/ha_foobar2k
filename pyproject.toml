@@ -42,4 +42,6 @@ pythonpath = "."
 filterwarnings = [
     # Fail on warnings raised by this integration only; HA core emits its own deprecations.
     "error:::custom_components\\.foobar2000",
+    # Never-awaited coroutines are reported from wherever they get collected, not from our module
+    "error::RuntimeWarning",
 ]

@@ -36,6 +36,7 @@ REQUIREMENTS = ["pyfoobar2k==0.2.8"]
 SCAN_INTERVAL = timedelta(seconds=5)
 _LOGGER = logging.getLogger(__name__)
 
+DOMAIN = "foobar2000"
 DEFAULT_NAME = "Foobar2000"
 DEFAULT_PORT = "8888"
 DEFAULT_TIMEOUT = 3
@@ -67,8 +68,9 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.port,
         vol.Optional(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): cv.positive_int,
         vol.Optional(CONF_VOLUME_STEP, default=DEFAULT_VOLUME_STEP): cv.positive_int,
-        vol.Optional(CONF_TURN_ON_ACTION, default=None): cv.SCRIPT_SCHEMA,
-        vol.Optional(CONF_TURN_OFF_ACTION, default=None): cv.SCRIPT_SCHEMA,
+        # No default: SCRIPT_SCHEMA turns None into [], which would always create a script
+        vol.Optional(CONF_TURN_ON_ACTION): cv.SCRIPT_SCHEMA,
+        vol.Optional(CONF_TURN_OFF_ACTION): cv.SCRIPT_SCHEMA,
     }
 )
 
@@ -89,7 +91,7 @@ def setup_platform(hass: HomeAssistant, config, add_devices, discovery_info=None
 
     remote = FoobarRemote(host, port, username, password, timeout)
 
-    add_devices([FoobarDevice(hass, remote, name, volume_step, turn_on_action, turn_off_action)])
+    add_devices([FoobarDevice(hass, remote, name, volume_step, turn_on_action, turn_off_action)], True)
 
 
 class FoobarDevice(MediaPlayerEntity):
@@ -157,19 +159,9 @@ class FoobarDevice(MediaPlayerEntity):
         self._albumart_path = ""
         # Script creation for the turn on/off config options
         if turn_on_action is not None:
-            turn_on_action = script.Script(
-                self.hass,
-                turn_on_action,
-                f"{self.name} turn ON script",
-                self.async_update_ha_state(True),
-            )
+            turn_on_action = script.Script(self.hass, turn_on_action, f"{self.name} turn ON script", DOMAIN)
         if turn_off_action is not None:
-            turn_off_action = script.Script(
-                self.hass,
-                turn_off_action,
-                f"{self.name} turn OFF script",
-                self.async_update_ha_state(True),
-            )
+            turn_off_action = script.Script(self.hass, turn_off_action, f"{self.name} turn OFF script", DOMAIN)
 
         self._turn_on_action = turn_on_action
         self._turn_off_action = turn_off_action
@@ -200,7 +192,6 @@ class FoobarDevice(MediaPlayerEntity):
                     self._state = STATE_IDLE
             else:
                 self._state = STATE_OFF
-            self.schedule_update_ha_state()
 
             if self._state in [STATE_PLAYING, STATE_PAUSED]:
                 self._track_name = info["title"]
@@ -281,17 +272,19 @@ class FoobarDevice(MediaPlayerEntity):
             supported_features |= MediaPlayerEntityFeature.TURN_OFF
         return supported_features
 
-    def turn_on(self):
+    async def async_turn_on(self):
         """Execute turn_on_action to turn on media player."""
         if self._turn_on_action is not None:
-            self._turn_on_action.run(variables={"entity_id": self.entity_id})
+            await self._turn_on_action.async_run(run_variables={"entity_id": self.entity_id}, context=self._context)
+            self.async_schedule_update_ha_state(True)
         else:
             _LOGGER.warning("Action turn_on requested but turn_on_action is none")
 
-    def turn_off(self):
-        """Execute turn_off_action to turn on media player."""
+    async def async_turn_off(self):
+        """Execute turn_off_action to turn off media player."""
         if self._turn_off_action is not None:
-            self._turn_off_action.run(variables={"entity_id": self.entity_id})
+            await self._turn_off_action.async_run(run_variables={"entity_id": self.entity_id}, context=self._context)
+            self.async_schedule_update_ha_state(True)
         else:
             _LOGGER.warning("Action turn_off requested but turn_off_action is none")
 
