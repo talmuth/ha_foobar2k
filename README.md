@@ -1,5 +1,23 @@
 # Foobar2000 Media Player Control in Home Assistant
 
+> [!WARNING]
+> **This project is no longer maintained and the repository is archived.**
+>
+> Please use **[strepto42/foobar2k_custom_component](https://github.com/strepto42/foobar2k_custom_component)**
+> ("Foobar 2000 Player") instead. It is in the HACS default catalog, is set up from the UI, supports
+> media browsing and `play_media`, and uses the actively maintained
+> [beefweb](https://github.com/hyperblast/beefweb) plugin (32- and 64-bit foobar2000) instead of foo_httpcontrol.
+>
+> **Migrating:**
+>
+> 1. In foobar2000, install the [beefweb](https://github.com/hyperblast/beefweb) component.
+> 2. Remove the `platform: foobar2000` entries from your `configuration.yaml`.
+> 3. In HACS, remove this repository (`talmuth/ha_foobar2k`) and its custom repository entry.
+> 4. In HACS, search for and download **Foobar 2000 Player**, then restart Home Assistant.
+> 5. Add it under **Settings → Devices & services → Add integration → Foobar 2000 Player**.
+>
+> The documentation below is kept for reference only.
+
 This custom component allows Home Assistant to control the **Foobar2000** media player.
 
 ## 📌 Requirements
